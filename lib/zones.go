@@ -50,5 +50,5 @@ type Zone struct {
 type ZoneList struct {
 	HasMore bool   `json:"has_more"`
 	Count   int    `json:"count"`
-	Objs    []Zone `json:"objs"`
+	Zones   []Zone `json:"objs"`
 }

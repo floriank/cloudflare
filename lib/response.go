@@ -5,7 +5,8 @@ type CfResponse struct {
 		Act string `json:"act"`
 	} `json:"request"`
 	Response struct {
-		Zones ZoneList `json:"zones"`
+		Zones   ZoneList   `json:"zones"`
+		Records RecordList `json:"recs"`
 	} `json:"response"`
 	Result string      `json:"result"`
 	Msg    interface{} `json:"msg"`

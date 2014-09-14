@@ -16,11 +16,30 @@ type Client struct {
 }
 
 func (client *Client) GetZoneList() (zones ZoneList, err error) {
-	resp, err := client.post("zone_load_multi")
+	var params map[string]string
+	resp, err := client.post("zone_load_multi", params)
 	if err == nil {
 		return makeZoneList(resp)
 	} else {
 		return ZoneList{}, err
+	}
+}
+
+func (client *Client) GetRecordList(zone Zone, offset int) (records RecordList, err error) {
+	params := make(map[string]string, 2)
+
+	params["z"] = zone.ZoneName
+
+	if offset > 0 {
+		params["o"] = string(offset)
+	}
+
+	resp, err := client.post("rec_load_all", params)
+
+	if err != nil {
+		return RecordList{}, err
+	} else {
+		return makeRecordList(resp)
 	}
 }
 
@@ -34,6 +53,27 @@ func makeZoneList(resp *http.Response) (zones ZoneList, err error) {
 	return response.Response.Zones, nil
 }
 
-func (client *Client) post(act string) (resp *http.Response, err error) {
-	return http.PostForm(endPoint, url.Values{"a": {act}, "tkn": {client.Token}, "email": {client.Email}})
+func makeRecordList(resp *http.Response) (records RecordList, err error) {
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return RecordList{}, err
+	}
+	var response CfResponse
+	err = json.Unmarshal(contents, &response)
+	return response.Response.Records, nil
+}
+
+func (client *Client) post(act string, params map[string]string) (resp *http.Response, err error) {
+	clientParams := url.Values{}
+	clientParams.Set("a", act)
+	clientParams.Set("tkn", client.Token)
+	clientParams.Set("email", client.Email)
+
+	if len(params) > 0 {
+		for k, v := range params {
+			clientParams.Set(k, v)
+		}
+	}
+
+	return http.PostForm(endPoint, clientParams)
 }

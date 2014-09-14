@@ -23,5 +23,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(domains.Count)
+	records, err := client.GetRecordList(domains.Zones[0], 0)
+	fmt.Println(records)
 }
