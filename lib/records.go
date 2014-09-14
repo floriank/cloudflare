@@ -33,3 +33,12 @@ type Record struct {
 		PendingSsl  int `json:"pending_ssl"`
 	} `json:"props"`
 }
+
+func (list *RecordList) Find(name string) (record Record) {
+	for _, record := range list.Records {
+		if record.DisplayName == name {
+			return record
+		}
+	}
+	return Record{}
+}

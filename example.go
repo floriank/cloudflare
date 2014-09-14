@@ -23,15 +23,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	records, err := client.GetRecordList(domains.Zones[0], 0)
-	fmt.Println(records)
+	zone := domains.Zones[0]
+	records, err := client.GetRecordList(zone, 0)
 
-	record := cf.Record{
-		Name:    "florian-test",
-		Type:    "TXT",
-		Ttl:     "1",
-		Content: "florian",
-	}
-	result := client.AddRecord(domains.Zones[0], record)
+	record := records.Find("florian-test")
+	result := client.RemoveRecord(zone, record)
 	fmt.Println(result)
 }

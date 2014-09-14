@@ -57,6 +57,17 @@ func (client *Client) AddRecord(zone Zone, record Record) bool {
 	return err == nil
 }
 
+func (client *Client) RemoveRecord(zone Zone, record Record) bool {
+	params := make(map[string]string, 2)
+
+	params["z"] = zone.ZoneName
+	params["id"] = record.RecId
+
+	_, err := client.post("rec_delete", params)
+
+	return err == nil
+}
+
 func makeZoneList(resp *http.Response) (zones ZoneList, err error) {
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
