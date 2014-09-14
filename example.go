@@ -2,8 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	cf "github.com/consulted/cloudflare/lib"
+	cloudflare "github.com/consulted/cloudflare/lib"
 )
 
 var token, email string
@@ -15,7 +14,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	client := cf.Client{
+	client := cloudflare.Client{
 		Email: email,
 		Token: token,
 	}
@@ -24,9 +23,6 @@ func main() {
 		panic(err)
 	}
 	zone := domains.Zones[0]
-	records, err := client.GetRecordList(zone, 0)
+	_, err = client.GetRecordList(zone, 0)
 
-	record := records.Find("florian-test")
-	result := client.RemoveRecord(zone, record)
-	fmt.Println(result)
 }

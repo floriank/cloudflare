@@ -1,4 +1,4 @@
-package lib
+package cloudflare
 
 type Zone struct {
 	ZoneId          string        `json:"zone_id"`

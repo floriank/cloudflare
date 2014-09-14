@@ -1,4 +1,8 @@
-package lib
+package cloudflare
+
+const (
+	AutomaticTtl = "1"
+)
 
 type RecordList struct {
 	HasMore bool     `json:"has_more"`

@@ -1,4 +1,4 @@
-package lib
+package cloudflare
 
 import (
 	"encoding/json"
@@ -43,7 +43,7 @@ func (client *Client) GetRecordList(zone Zone, offset int) (records RecordList, 
 	}
 }
 
-func (client *Client) AddRecord(zone Zone, record Record) bool {
+func (client *Client) AddRecord(zone Zone, record Record) (r Record, err error) {
 	params := make(map[string]string, 5)
 
 	params["z"] = zone.ZoneName
@@ -52,20 +52,34 @@ func (client *Client) AddRecord(zone Zone, record Record) bool {
 	params["content"] = record.Content
 	params["ttl"] = record.Ttl
 
-	_, err := client.post("rec_new", params)
+	_, err = client.post("rec_new", params)
 
-	return err == nil
+	return record, err
 }
 
-func (client *Client) RemoveRecord(zone Zone, record Record) bool {
+func (client *Client) UpdateRecord(zone Zone, record Record) (r Record, err error) {
+	params := make(map[string]string, 6)
+
+	params["z"] = zone.ZoneName
+	params["type"] = record.Type
+	params["id"] = record.RecId
+	params["name"] = record.Name
+	params["content"] = record.Content
+	params["ttl"] = record.Ttl
+
+	_, err = client.post("rec_edit", params)
+	return record, err
+}
+
+func (client *Client) RemoveRecord(zone Zone, record Record) (r Record, err error) {
 	params := make(map[string]string, 2)
 
 	params["z"] = zone.ZoneName
 	params["id"] = record.RecId
 
-	_, err := client.post("rec_delete", params)
+	_, err = client.post("rec_delete", params)
 
-	return err == nil
+	return record, err
 }
 
 func makeZoneList(resp *http.Response) (zones ZoneList, err error) {

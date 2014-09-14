@@ -1,4 +1,4 @@
-package lib
+package cloudflare
 
 type CfResponse struct {
 	Request struct {
