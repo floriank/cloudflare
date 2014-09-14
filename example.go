@@ -25,4 +25,13 @@ func main() {
 	}
 	records, err := client.GetRecordList(domains.Zones[0], 0)
 	fmt.Println(records)
+
+	record := cf.Record{
+		Name:    "florian-test",
+		Type:    "TXT",
+		Ttl:     "1",
+		Content: "florian",
+	}
+	result := client.AddRecord(domains.Zones[0], record)
+	fmt.Println(result)
 }

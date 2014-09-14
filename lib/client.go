@@ -43,6 +43,20 @@ func (client *Client) GetRecordList(zone Zone, offset int) (records RecordList, 
 	}
 }
 
+func (client *Client) AddRecord(zone Zone, record Record) bool {
+	params := make(map[string]string, 5)
+
+	params["z"] = zone.ZoneName
+	params["type"] = record.Type
+	params["name"] = record.Name
+	params["content"] = record.Content
+	params["ttl"] = record.Ttl
+
+	_, err := client.post("rec_new", params)
+
+	return err == nil
+}
+
 func makeZoneList(resp *http.Response) (zones ZoneList, err error) {
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
