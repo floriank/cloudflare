@@ -38,3 +38,8 @@ Flags:
 -z <zone> - optional, the name of the zone
 -d - delete that record
 ```
+
+
+## TODO
+
+- [ ] Split the commands up
