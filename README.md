@@ -33,7 +33,7 @@ Flags:
 
 ```
 -c <content> - the content for the record
--n <name> - the name of the record
+-n <name> - the name of the record, takes precendence
 -t <type> - the type for the record (A/CNAME/MX/TXT/SPF/AAAA/NS/SRV/LOC), default is "A"
 -z <zone> - optional, the name of the zone
 -d - delete that record

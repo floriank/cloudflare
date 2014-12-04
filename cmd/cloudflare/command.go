@@ -1,18 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/consulted/cloudflare"
+	"github.com/voxelbrain/goptions"
 	"os"
 )
 
-// Email, Token, Name, IP
-
 var email, token, name, content, zoneName, rType string
-var delRecord bool
-var client cloudflare.Client
-var record cloudflare.Record
 
 const (
 	CFToken = "CF_TOKEN"
@@ -20,80 +15,99 @@ const (
 	CFZone  = "CF_ZONE"
 )
 
-func init() {
-	flag.StringVar(&name, "n", "", "the Name for the new record (Type A)")
-	flag.StringVar(&content, "c", "", "the content value for the new record")
-	flag.StringVar(&rType, "t", "A", "the type for the record (A/CNAME/MX/TXT/SPF/AAAA/NS/SRV/LOC)")
-	flag.StringVar(&zoneName, "z", os.Getenv(CFZone), "the name of the zone to use (settable via CF_ZONE)")
-	flag.BoolVar(&delRecord, "d", false, "delete the given record")
-	flag.Parse()
-
-	if flag.NFlag() == 0 {
-		flag.Usage()
-		os.Exit(0)
-	}
-
-	email = os.Getenv(CFEmail)
-	token = os.Getenv(CFToken)
-	checkParams()
-}
-
 func main() {
 
-	client.Email = email
-	client.Token = token
+	options := struct {
+		Zone  string        `goptions:"-z, --zone, description='The zone to use'"`
+		Token string        `goptions:"--token, description='The token for the CF API'"`
+		Email string        `goptions:"--email, description='The email for the CF API'"`
+		Help  goptions.Help `goptions:"-h, --help, description='Show this help'"`
 
-	record.Name = name
-	record.Type = "A"
-	record.Content = content
-	record.Ttl = "1" // Automatic
+		goptions.Verbs
+		Add struct {
+			Content string `goptions:"-c, --content, obligatory, description='The content for the record'"`
+			Name    string `goptions:"-n, --name, obligatory, description='The name of the record'"`
+			Type    string `goptions:"-t, --type, description='The type of the record'"`
+		} `goptions:"add"`
 
+		Delete struct {
+			Content          string `goptions:"-c, --content, obligatory, description='The content for the record'"`
+			SkipConfirmation bool   `goptions:"-y, --yes, description='Skip confirmation'"`
+		} `goptions:"delete"`
+	}{
+		Zone:  os.Getenv(CFZone),
+		Email: os.Getenv(CFEmail),
+		Token: os.Getenv(CFToken),
+	}
+
+	goptions.ParseAndFail(&options)
+
+	opts := Options{
+		Email: options.Email,
+		Token: options.Token,
+		Zone:  options.Zone,
+	}
+
+	switch {
+	case options.Verbs == "add":
+		opts.Content = options.Add.Content
+		opts.Name = options.Add.Name
+		opts.Type = options.Add.Type
+
+		addRecord(&opts)
+	case options.Verbs == "delete":
+		fmt.Println("delete all records")
+	}
+}
+
+// func deleteRecord(zone cloudflare.Zone) {
+// 	recordList, err := client.GetRecordList(zone, 0)
+// 	if err != nil {
+// 		fmt.Println("Could not retrieve record list: " + err.Error())
+// 		os.Exit(1)
+// 	}
+
+// 	record, err = recordList.Find(record.Name)
+// 	if err != nil {
+// 		fmt.Println("Could not find record: " + err.Error())
+// 		os.Exit(1)
+// 	}
+
+// 	_, err = client.RemoveRecord(zone, record)
+// 	if err != nil {
+// 		fmt.Println("Could not remove record: " + err.Error())
+// 		os.Exit(1)
+// 	}
+// }
+
+func addRecord(o *Options) {
+	client := makeClient(o)
 	zones, err := client.GetZoneList()
 
 	if err != nil {
-		fmt.Println("could not retrieve the zone list")
-		os.Exit(1)
+		fmt.Println("Could not fetch zones: " + err.Error())
+		exitWithError()
 	}
 
-	zone, err := zones.Find(zoneName)
+	zone, err := zones.Find(o.Zone)
 
 	if err != nil {
-		fmt.Println("could not find zone specified: " + zoneName)
+		fmt.Println("Could not fetch zone: " + err.Error())
+		exitWithError()
 	}
 
-	if delRecord == true {
-		deleteRecord(zone)
-	} else {
-		addRecord(zone)
-	}
-}
-
-func deleteRecord(zone cloudflare.Zone) {
-	recordList, err := client.GetRecordList(zone, 0)
-	if err != nil {
-		fmt.Println("Could not retrieve record list: " + err.Error())
-		os.Exit(1)
+	record := cloudflare.Record{
+		Name:    o.Name,
+		Type:    o.Type,
+		Content: o.Content,
+		Ttl:     "1", // automatic
 	}
 
-	record, err = recordList.Find(record.Name)
-	if err != nil {
-		fmt.Println("Could not find record: " + err.Error())
-		os.Exit(1)
-	}
-
-	_, err = client.RemoveRecord(zone, record)
-	if err != nil {
-		fmt.Println("Could not remove record: " + err.Error())
-		os.Exit(1)
-	}
-}
-
-func addRecord(zone cloudflare.Zone) {
-	record, err := client.AddRecord(zone, record)
+	record, err = client.AddRecord(zone, record)
 
 	if err != nil {
 		fmt.Println("Could not add record: " + err.Error())
-		os.Exit(1)
+		exitWithError()
 	}
 
 	// activate cloudflare proxy
@@ -102,35 +116,17 @@ func addRecord(zone cloudflare.Zone) {
 
 	if err != nil {
 		fmt.Println("Could not update record: " + err.Error())
-		os.Exit(1)
+		exitWithError()
 	}
 }
 
-func checkParams() {
-	message := " is not set!"
-	err := false
-	if email == "" {
-		fmt.Println(CFEmail + message)
-		err = true
+func makeClient(o *Options) *cloudflare.Client {
+	return &cloudflare.Client{
+		Email: o.Email,
+		Token: o.Token,
 	}
+}
 
-	if token == "" {
-		fmt.Println(CFToken + message)
-		err = true
-	}
-
-	if name == "" {
-		fmt.Println("Record name" + message)
-		err = true
-	}
-
-	if content == "" && delRecord == false {
-		fmt.Println("Content" + message)
-		err = true
-	}
-
-	if err == true {
-		os.Exit(1)
-	}
-
+func exitWithError() {
+	os.Exit(1)
 }
