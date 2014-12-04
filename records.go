@@ -1,5 +1,9 @@
 package cloudflare
 
+import (
+	"errors"
+)
+
 const (
 	AutomaticTtl = "1"
 )
@@ -38,11 +42,11 @@ type Record struct {
 	} `json:"props"`
 }
 
-func (list *RecordList) Find(name string) (record Record) {
+func (list *RecordList) Find(name string) (record Record, err error) {
 	for _, record := range list.Records {
 		if record.DisplayName == name {
-			return record
+			return record, nil
 		}
 	}
-	return Record{}
+	return Record{}, errors.New("record not found!")
 }

@@ -1,5 +1,9 @@
 package cloudflare
 
+import (
+	"errors"
+)
+
 type Zone struct {
 	ZoneId          string        `json:"zone_id"`
 	UserId          string        `json:"user_id"`
@@ -51,4 +55,13 @@ type ZoneList struct {
 	HasMore bool   `json:"has_more"`
 	Count   int    `json:"count"`
 	Zones   []Zone `json:"objs"`
+}
+
+func (z *ZoneList) Find(name string) (zone Zone, err error) {
+	for _, zone := range z.Zones {
+		if zone.ZoneName == name {
+			return zone, nil
+		}
+	}
+	return Zone{}, errors.New("zone not found!")
 }
