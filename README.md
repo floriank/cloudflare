@@ -29,4 +29,4 @@ This will also update the record to be immediately Cloudflare proxy enabled (ora
 ./cloudflare [-z zone] delete -c [content]
 ```
 
-Removal will ask for your confirmation, howver, you can pass the `-y` flag to skip the confirmation. All records with a given content will be deleted.
+Removal will ask for your confirmation, however, you can pass the `-y` flag to skip the confirmation. All records with a given content will be deleted.
