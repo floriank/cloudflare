@@ -42,11 +42,21 @@ type Record struct {
 	} `json:"props"`
 }
 
-func (list *RecordList) Find(name string) (record Record, err error) {
+func (list *RecordList) Find(content string) (record Record, err error) {
 	for _, record := range list.Records {
-		if record.DisplayName == name {
+		if record.Content == content {
 			return record, nil
 		}
 	}
 	return Record{}, errors.New("record not found!")
+}
+
+func (list *RecordList) FindAll(content string) (records *RecordList) {
+	r := RecordList{}
+	for _, record := range list.Records {
+		if record.Content == content {
+			r.Records = append(r.Records, record)
+		}
+	}
+	return &r
 }

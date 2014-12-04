@@ -56,43 +56,46 @@ func main() {
 
 		addRecord(&opts)
 	case options.Verbs == "delete":
-		fmt.Println("delete all records")
+		opts.Content = options.Delete.Content
+		opts.SkipConfirm = options.Delete.SkipConfirmation
+
+		deleteRecords(&opts)
 	}
 }
 
-// func deleteRecord(zone cloudflare.Zone) {
-// 	recordList, err := client.GetRecordList(zone, 0)
-// 	if err != nil {
-// 		fmt.Println("Could not retrieve record list: " + err.Error())
-// 		os.Exit(1)
-// 	}
-
-// 	record, err = recordList.Find(record.Name)
-// 	if err != nil {
-// 		fmt.Println("Could not find record: " + err.Error())
-// 		os.Exit(1)
-// 	}
-
-// 	_, err = client.RemoveRecord(zone, record)
-// 	if err != nil {
-// 		fmt.Println("Could not remove record: " + err.Error())
-// 		os.Exit(1)
-// 	}
-// }
-
-func addRecord(o *Options) {
+func deleteRecords(o *Options) {
 	client := makeClient(o)
-	zones, err := client.GetZoneList()
+	zone, err := findZone(o.Zone, client)
 
 	if err != nil {
-		fmt.Println("Could not fetch zones: " + err.Error())
+		fmt.Println("Zone not found: " + err.Error())
 		exitWithError()
 	}
 
-	zone, err := zones.Find(o.Zone)
+	list, err := client.GetRecordList(zone, 0)
 
 	if err != nil {
-		fmt.Println("Could not fetch zone: " + err.Error())
+		fmt.Println("Records could not be retrieved: " + err.Error())
+	}
+	records := list.FindAll(o.Content)
+
+	for _, record := range records.Records {
+		if o.SkipConfirm || askForConfirmation("Do you really want to remove \""+record.Name+"\"?") {
+			_, err := client.RemoveRecord(zone, record)
+			if err != nil {
+				fmt.Println("Could not remove \"" + record.Name + "\"")
+			}
+		}
+	}
+}
+
+func addRecord(o *Options) {
+	client := makeClient(o)
+
+	zone, err := findZone(o.Zone, client)
+
+	if err != nil {
+		fmt.Println("Zone not found: " + err.Error())
 		exitWithError()
 	}
 
@@ -127,6 +130,54 @@ func makeClient(o *Options) *cloudflare.Client {
 	}
 }
 
+func findZone(name string, c *cloudflare.Client) (z cloudflare.Zone, err error) {
+	zones, err := c.GetZoneList()
+
+	if err != nil {
+		return cloudflare.Zone{}, err
+	}
+
+	zone, err := zones.Find(name)
+
+	if err != nil {
+		fmt.Println("Could not fetch zone: " + err.Error())
+		return cloudflare.Zone{}, err
+	}
+
+	return zone, nil
+}
+
 func exitWithError() {
 	os.Exit(1)
+}
+
+func askForConfirmation(message string) bool {
+	fmt.Println(message)
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		panic(err)
+	}
+	okayResponses := []string{"y", "Y", "yes", "Yes", "YES"}
+	nokayResponses := []string{"n", "N", "no", "No", "NO"}
+	if containsString(okayResponses, response) {
+		return true
+	} else if containsString(nokayResponses, response) {
+		return false
+	} else {
+		return askForConfirmation(message)
+	}
+}
+
+func containsString(slice []string, element string) bool {
+	return !(posString(slice, element) == -1)
+}
+
+func posString(slice []string, element string) int {
+	for index, elem := range slice {
+		if elem == element {
+			return index
+		}
+	}
+	return -1
 }
