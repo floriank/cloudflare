@@ -1,0 +1,15 @@
+{
+	"ImportPath": "github.com/consulted/cloudflare",
+	"GoVersion": "go1.3.3",
+	"Packages": [
+		"github.com/consulted/cloudflare",
+		"github.com/consulted/cloudflare/cmd/cloudflare"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/voxelbrain/goptions",
+			"Comment": "2.5.9",
+			"Rev": "d04e7588dd7318baa5b7391a15334e4c2a5815c1"
+		}
+	]
+}
